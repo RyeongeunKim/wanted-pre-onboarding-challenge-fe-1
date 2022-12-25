@@ -1,25 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+import { Route, Routes } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
+import TodoListPage from './pages/TodoListPage';
+import TodoListItemPage from './pages/TodoListItemPage';
+// import PostPage from './pages/PostPage';
 
-function App() {
+
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Routes>
+        <Route element={<TodoListPage />} path={'/'} exact />
+        <Route element={<TodoListPage />} path="/todolist" exact />
+        <Route element={<TodoListItemPage />} path="/todolistitem" />
+        <Route element={<LoginPage />} path="auth/login" />
+        <Route element={<SignUpPage />} path="auth/signup" />
+      </Routes>
+    </>
   );
-}
+};
 
 export default App;
