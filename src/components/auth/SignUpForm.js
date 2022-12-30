@@ -91,7 +91,7 @@ const SignUpForm = () => {
             <input
               type="text"
               name="email"
-              // value={state.email}
+              value={state.email}
               onChange={handleChange}
               onBlur={({ target }) => handleValidate(target)}
             />

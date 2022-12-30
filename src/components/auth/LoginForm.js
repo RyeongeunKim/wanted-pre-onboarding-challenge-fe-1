@@ -33,15 +33,12 @@ const LoginForm = () => {
       })
         .then((response) => response.json())
         .then((data) => {
-          if (data?.token) {
-            console.log(data);
-            try {
-              localStorage.setItem('user', JSON.stringify(data.token));
-            } catch (e) {
-              console.log(e);
-            }
-            navigate('/todolist');
+          try {
+            localStorage.setItem('user', JSON.stringify(data.token));
+          } catch (e) {
+            console.log('localStorage is not working');
           }
+          navigate('/todolist');
         })
         .catch((err) => {
           console.log(err);
