@@ -4,17 +4,40 @@ import SignUpPage from './pages/SignUpPage';
 import TodoListPage from './pages/TodoListPage';
 import TodoListItemPage from './pages/TodoListItemPage';
 // import PostPage from './pages/PostPage';
-
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 const App = () => {
   return (
     <>
       <Routes>
-        <Route element={<TodoListPage />} path={'/'} exact />
-        <Route element={<TodoListPage />} path="/todolist" exact />
-        <Route element={<TodoListItemPage />} path="/todolistitem" />
-        <Route element={<LoginPage />} path="auth/login" />
-        <Route element={<SignUpPage />} path="auth/signup" />
+        <Route
+          exact
+          path="/"
+          element={
+            <ProtectedRoute>
+              <TodoListPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* <Route element={<TodoListPage />} path="/todolist" exact /> */}
+        <Route
+          path="/todolist"
+          element={
+            <ProtectedRoute>
+              <TodoListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/todolistitem"
+          element={
+            <ProtectedRoute>
+              <TodoListItemPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="auth/login" element={<LoginPage />} />
+        <Route path="auth/signup" element={<SignUpPage />} />
       </Routes>
     </>
   );
