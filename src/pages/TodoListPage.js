@@ -1,45 +1,98 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Logout from '../components/common/Logout';
 
 const TodoListPage = () => {
   const [state, setState] = useState({
     todos: [],
-    title: '',
-    content: '',
+    updateTodos: [], // 수정된 배열
+    title: '', // 추가 input 제목
+    content: '', // 추가 input 내용
   });
 
   // const [error, setError] = useState(null);
 
   const user = localStorage.getItem('user');
 
-  useEffect(() => {
-    if (user) {
-      fetch('/todos', {
-        method: 'GET',
-        headers: {
-          'Content-type': 'application/json; charset=UTF-8',
-          Authorization: user,
-        },
-      })
-        .then((response) => response.json())
-        .then(({ data }) => {
-          setState((prev) => ({ ...prev, todos: data }));
-        })
-        .catch((error) => {
-          console.error('Error:', error);
+  const handleSelect = useCallback(() => {
+    fetch('/todos', {
+      method: 'GET',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8',
+        Authorization: user,
+      },
+    })
+      .then((response) => response.json())
+      .then(({ data }) => {
+        let tempArr = data;
+        // tempArr.map((todo) => (todo.open = false));
+        tempArr.forEach((todo) => {
+          todo.open = false;
+          todo.update = false;
+          todo.delete = false;
         });
-    }
+        setState((prev) => ({ ...prev, todos: tempArr }));
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
   }, [user]);
 
-  const todos = (props) => {
-    return props.map((todo) => (
+  useEffect(() => {
+    if (user) {
+      handleSelect();
+    }
+  }, [user, handleSelect]);
+
+  const todos = () => {
+    return state.todos.map((todo, index) => (
       <div key={todo.id}>
-        <ul>
-          <li style={{ cursor: 'pointer' }}>{todo.title}</li>
-        </ul>
+        <div
+          onClick={() => {
+            let tempTodos = [...state.todos];
+            tempTodos[index].open = !todo.open;
+            setState((prev) => ({ ...prev, todos: tempTodos }));
+          }}
+          style={{ display: 'inline-block', cursor: 'pointer' }}
+        >
+          {todo.open ? '▼' : '▶'}
+        </div>
+        <input
+          type="text"
+          name="title"
+          value={todo.title}
+          onChange={(e) => handleInputUpdate(index, e.target)}
+          // readOnly={!todo.update}
+          style={{ border: '0px', outline: 'none', display: 'inline-block' }}
+        />
+        <div
+          onClick={() => handleUpdate(index, todo.id)}
+          style={{
+            display: 'inline-block',
+            marginRight: '5px',
+            cursor: 'pointer',
+          }}
+        >
+          ✏️
+        </div>
+        <div
+          onClick={() => handleDelete(todo.id)}
+          style={{ display: 'inline-block', cursor: 'pointer' }}
+        >
+          🗑️
+        </div>
+        <br />
+        {todo.open ? (
+          <input
+            type="text"
+            name="content"
+            value={todo.content}
+            onChange={(e) => handleInputUpdate(index, e.target)}
+            // readOnly={!todo.update}
+            style={{ border: '0px', outline: 'none', textIndent: '1em' }}
+          />
+        ) : null}
       </div>
     ));
-    // return <ul>sdasd</ul>;
   };
 
   const handleChange = ({ target }) => {
@@ -47,11 +100,12 @@ const TodoListPage = () => {
     setState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleArrChange = (e, index) => {
-    let tempArr = [...state.updateTodos];
-    const { name, value } = e.target;
-    tempArr[index][name] = value;
-    setState((prev) => ({ ...prev, updateTodos: tempArr }));
+  const handleInputUpdate = (index, target) => {
+    console.log(index);
+    const { name, value } = target;
+    let tempTodos = [...state.todos];
+    tempTodos[index][name] = value;
+    setState((prev) => ({ ...prev, tempTodos }));
   };
 
   const handleAdd = () => {
@@ -83,42 +137,32 @@ const TodoListPage = () => {
     }
   };
 
-  const handleClick = (index, key, flag) => {
-    let tempArr = [...state.todos];
-    // 배열 중 하나만 수정 가능
-    if (key === 'update') {
-      tempArr.forEach((todo, tempIndex) => {
-        if (tempIndex !== index && todo.update) {
-          todo.update = false;
-        }
-      });
-    }
-    tempArr[index][key] = !flag;
-    setState((prev) => ({ ...prev, tempArr }));
-  };
-
-  const handleUpdate = (id) => {
-    (async () => {
-      fetch(`/todos/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          title: state.title,
-          content: state.content,
-        }),
-        headers: {
-          'Content-type': 'application/json; charset=UTF-8',
-          Authorization: user,
-        },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data);
-          handleSelect();
+  const handleUpdate = (index, id) => {
+    if (state.todos[index].title && state.todos[index].content) {
+      (async () => {
+        fetch(`/todos/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: state.todos[index].title,
+            content: state.todos[index].content,
+          }),
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+            Authorization: user,
+          },
         })
-        .catch((err) => {
-          console.log(err);
-        });
-    })();
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data);
+            handleSelect();
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      })();
+    } else {
+      alert('제목 또는 내용을 입력해주세요');
+    }
   };
 
   const handleDelete = (id) => {
@@ -147,35 +191,40 @@ const TodoListPage = () => {
         <Logout />
       </div>
       <div>
-        <h2>ToDo List</h2>
+        <h2>할일 추가하기</h2>
         <div>
-          <label>
-            Title
-            <input
-              type="text"
-              name="title"
-              value={state.title}
-              onChange={handleChange}
-              required
-            />
-          </label>
+          제목 : &nbsp;
+          <input
+            type="text"
+            name="title"
+            value={state.title}
+            onChange={handleChange}
+            required
+            style={{
+              // border: '0px',
+              outline: 'none',
+              display: 'inline-block',
+            }}
+          />
         </div>
         <div>
-          <label>
-            Content
-            <input
-              type="text"
-              name="content"
-              value={state.content}
-              onChange={handleChange}
-              required
-            />
-          </label>
+          내용 : &nbsp;
+          <input
+            type="text"
+            name="content"
+            value={state.content}
+            onChange={handleChange}
+            required
+          />
         </div>
         <div>
           <button onClick={handleAdd}>추가</button>
         </div>
-        <div>{state.todos.length ? todos(state.todos) : null}</div>
+        <hr />
+        <div>
+          <h2>ToDo List</h2>
+          {state.todos.length ? todos() : null}
+        </div>
       </div>
     </div>
   );
