@@ -34,7 +34,9 @@ const LoginForm = () => {
         .then((response) => response.json())
         .then((data) => {
           try {
-            localStorage.setItem('user', JSON.stringify(data.token));
+            if (data.token) {
+              localStorage.setItem('user', JSON.stringify(data.token));
+            }
           } catch (e) {
             console.log('localStorage is not working');
           }

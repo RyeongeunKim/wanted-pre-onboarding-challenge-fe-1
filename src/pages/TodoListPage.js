@@ -3,13 +3,11 @@ import Logout from '../components/common/Logout';
 
 const TodoListPage = () => {
   const [state, setState] = useState({
-    todos: [],
-    updateTodos: [], // 수정된 배열
+    prevTodos: [],
+    newTodos: [],
     title: '', // 추가 input 제목
     content: '', // 추가 input 내용
   });
-
-  // const [error, setError] = useState(null);
 
   const user = localStorage.getItem('user');
 
@@ -24,13 +22,15 @@ const TodoListPage = () => {
       .then((response) => response.json())
       .then(({ data }) => {
         let tempArr = data;
-        // tempArr.map((todo) => (todo.open = false));
         tempArr.forEach((todo) => {
-          todo.open = false;
           todo.update = false;
-          todo.delete = false;
+          todo.open = false;
         });
-        setState((prev) => ({ ...prev, todos: tempArr }));
+        setState((prev) => ({
+          ...prev,
+          prevTodos: tempArr,
+          newTodos: tempArr,
+        }));
       })
       .catch((error) => {
         console.error('Error:', error);
@@ -44,13 +44,16 @@ const TodoListPage = () => {
   }, [user, handleSelect]);
 
   const todos = () => {
-    return state.todos.map((todo, index) => (
+    return state.newTodos.map((todo, index) => (
       <div key={todo.id}>
         <div
           onClick={() => {
-            let tempTodos = [...state.todos];
-            tempTodos[index].open = !todo.open;
-            setState((prev) => ({ ...prev, todos: tempTodos }));
+            let tempTodos = [...state.newTodos];
+            tempTodos[index] = {
+              ...tempTodos[index],
+              open: !tempTodos[index].open,
+            };
+            setState((prev) => ({ ...prev, newTodos: tempTodos }));
           }}
           style={{ display: 'inline-block', cursor: 'pointer' }}
         >
@@ -60,39 +63,74 @@ const TodoListPage = () => {
           type="text"
           name="title"
           value={todo.title}
+          readOnly={!todo.update}
           onChange={(e) => handleInputUpdate(index, e.target)}
-          // readOnly={!todo.update}
-          style={{ border: '0px', outline: 'none', display: 'inline-block' }}
-        />
-        <div
-          onClick={() => handleUpdate(index, todo.id)}
           style={{
+            border: '0px',
+            outline: todo.update ? '0.1rem #969696 solid' : 'none',
             display: 'inline-block',
-            marginRight: '5px',
-            cursor: 'pointer',
           }}
-        >
-          ✏️
-        </div>
-        <div
-          onClick={() => handleDelete(todo.id)}
-          style={{ display: 'inline-block', cursor: 'pointer' }}
-        >
-          🗑️
-        </div>
+        />
+        {todo.update ? (
+          <div
+            style={{
+              display: 'inline-block',
+              marginRight: '5px',
+              marginLeft: '5px',
+            }}
+          >
+            <button onClick={() => handleUpdate(index, todo.id)}>수정</button>
+            <button onClick={() => handleCancel(index)}>취소</button>
+          </div>
+        ) : (
+          <>
+            <div
+              onClick={() => {
+                let tempTodos = [...state.newTodos];
+                tempTodos[index] = {
+                  ...tempTodos[index],
+                  update: !tempTodos[index].update,
+                };
+                setState((prev) => ({ ...prev, newTodos: tempTodos }));
+              }}
+              style={{
+                display: 'inline-block',
+                marginRight: '5px',
+                cursor: 'pointer',
+              }}
+            >
+              ✏️
+            </div>
+            <div
+              onClick={() => handleDelete(todo.id)}
+              style={{ display: 'inline-block', cursor: 'pointer' }}
+            >
+              🗑️
+            </div>
+          </>
+        )}
         <br />
-        {todo.open ? (
-          <input
-            type="text"
-            name="content"
-            value={todo.content}
-            onChange={(e) => handleInputUpdate(index, e.target)}
-            // readOnly={!todo.update}
-            style={{ border: '0px', outline: 'none', textIndent: '1em' }}
-          />
-        ) : null}
+        <div style={{ paddingLeft: '14px' }}>
+          {todo.open ? (
+            <input
+              type="text"
+              name="content"
+              value={todo.content}
+              readOnly={!todo.update}
+              onChange={(e) => handleInputUpdate(index, e.target)}
+              style={{
+                border: '0px',
+                outline: todo.update ? '0.1rem #969696 solid' : 'none',
+              }}
+            />
+          ) : null}
+        </div>
       </div>
     ));
+  };
+
+  const handleCancel = () => {
+    setState((prev) => ({ ...prev, newTodos: prev.prevTodos }));
   };
 
   const handleChange = ({ target }) => {
@@ -101,11 +139,10 @@ const TodoListPage = () => {
   };
 
   const handleInputUpdate = (index, target) => {
-    console.log(index);
     const { name, value } = target;
-    let tempTodos = [...state.todos];
-    tempTodos[index][name] = value;
-    setState((prev) => ({ ...prev, tempTodos }));
+    let tempTodos = [...state.newTodos];
+    tempTodos[index] = { ...tempTodos[index], [name]: value }; // 복사본 대입하여 객체 참조 해제
+    setState((prev) => ({ ...prev, newTodos: tempTodos }));
   };
 
   const handleAdd = () => {
@@ -138,13 +175,13 @@ const TodoListPage = () => {
   };
 
   const handleUpdate = (index, id) => {
-    if (state.todos[index].title && state.todos[index].content) {
+    if (state.newTodos[index].title && state.newTodos[index].content) {
       (async () => {
         fetch(`/todos/${id}`, {
           method: 'PUT',
           body: JSON.stringify({
-            title: state.todos[index].title,
-            content: state.todos[index].content,
+            title: state.newTodos[index].title,
+            content: state.newTodos[index].content,
           }),
           headers: {
             'Content-type': 'application/json; charset=UTF-8',
@@ -201,7 +238,6 @@ const TodoListPage = () => {
             onChange={handleChange}
             required
             style={{
-              // border: '0px',
               outline: 'none',
               display: 'inline-block',
             }}
@@ -223,7 +259,7 @@ const TodoListPage = () => {
         <hr />
         <div>
           <h2>ToDo List</h2>
-          {state.todos.length ? todos() : null}
+          {state.newTodos.length ? todos() : null}
         </div>
       </div>
     </div>
