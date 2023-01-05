@@ -2,8 +2,6 @@ import { Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import TodoListPage from './pages/TodoListPage';
-import TodoListItemPage from './pages/TodoListItemPage';
-// import PostPage from './pages/PostPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 const App = () => {
@@ -19,20 +17,11 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-        {/* <Route element={<TodoListPage />} path="/todolist" exact /> */}
         <Route
           path="/todolist"
           element={
             <ProtectedRoute>
               <TodoListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/todolistitem"
-          element={
-            <ProtectedRoute>
-              <TodoListItemPage />
             </ProtectedRoute>
           }
         />

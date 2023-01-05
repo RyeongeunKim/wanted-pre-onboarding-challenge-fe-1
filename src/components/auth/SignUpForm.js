@@ -59,7 +59,7 @@ const SignUpForm = () => {
       })
         .then((response) => response.json())
         .then((data) => {
-          if (data?.token) {
+          if (data.token) {
             console.log(data.message);
             try {
               localStorage.setItem('user', JSON.stringify(data.token));
@@ -70,7 +70,7 @@ const SignUpForm = () => {
             }
             navigate('/');
           }
-          if (data?.details) {
+          if (data.details) {
             setError(data.details);
           }
         })
